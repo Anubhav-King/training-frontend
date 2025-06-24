@@ -1,17 +1,14 @@
-run = ["npm", "run", "dev"]
-entrypoint = "index.html"
+entrypoint = "index.js"
+modules = ["nodejs-22"]
+hidden = [".config", "package-lock.json"]
 
-[env]
-NODE_ENV = "development"
-
-[install]
-cmd = "npm install"
-
-[language]
-language = "nodejs"
+[gitHubImport]
+requiredFiles = [".replit", "replit.nix", "package.json", "package-lock.json"]
 
 [nix]
 channel = "stable-24_11"
 
-[gitHubImport]
-requiredFiles = [".replit", "replit.nix", "package.json", "vite.config.js"]
+[deployment]
+run = ["node", "index.js"]
+deploymentTarget = "autoscale"
+ignorePorts = false
