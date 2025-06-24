@@ -3,8 +3,20 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { BASE_URL } from "../../utils/api";
 
-const AdminRegister = () => {
-  const [form, setForm] = useState({ name: "", mobile: "", password: "" });
+const AdminRegistration = () => {
+  const isAdminRoute = window.location.pathname === "/admin-register";
+
+  const [form, setForm] = useState({
+    name: "",
+    mobile: "",
+    password: "Monday01",
+    jobTitles: isAdminRoute ? ["Admin", ""] : [""],
+    passcode: ""
+  });
+
+  const [isAdminSelected, setIsAdminSelected] = useState(false);
+  const [adminCodeValid, setAdminCodeValid] = useState(false);
+
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -13,9 +25,39 @@ const AdminRegister = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validation
+    if (!form.name || !form.mobile) {
+      alert("Name and Mobile are required.");
+      return;
+    }
+
+    if (!isAdminRoute && form.jobTitles[0] === "Admin") {
+      if (!adminCodeValid) {
+        alert("Admin code not verified.");
+        return;
+      }
+      if (!form.jobTitles[1]) {
+        alert("Please select a secondary job title.");
+        return;
+      }
+    }
+
+    const endpoint = isAdminRoute
+      ? `${BASE_URL}/api/users/register`
+      : `${BASE_URL}/api/users/register`;
+
+    const payload = {
+      ...form,
+      jobTitles:
+        isAdminRoute || (form.jobTitles[0] === "Admin" && adminCodeValid)
+          ? [form.jobTitles[1]]
+          : [form.jobTitles[0]]
+    };
+
     try {
-      await axios.post(`${BASE_URL}/api/users/register-admin`, form);
-      alert("Admin registered successfully!");
+      await axios.post(endpoint, payload);
+      alert(isAdminRoute ? "Admin registered successfully!" : "User request submitted!");
       navigate("/login");
     } catch (err) {
       console.error(err);
@@ -25,7 +67,9 @@ const AdminRegister = () => {
 
   return (
     <div className="p-6 max-w-md mx-auto">
-      <h2 className="text-xl font-bold mb-4">Admin Registration</h2>
+      <h2 className="text-xl font-bold mb-4">
+        {isAdminRoute ? "Admin Registration" : "User Registration"}
+      </h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
           name="name"
@@ -41,23 +85,137 @@ const AdminRegister = () => {
           placeholder="Mobile"
           className="w-full border px-3 py-2"
         />
-        <input
-          name="password"
-          type="password"
-          value={form.password}
-          onChange={handleChange}
-          placeholder="Password"
-          className="w-full border px-3 py-2"
-        />
+
+        {/* Job Title Selection */}
+        <label className="block font-medium">Job Title(s)</label>
+        {isAdminRoute ? (
+          <>
+            <select
+              className="w-full border px-3 py-2 bg-gray-100 cursor-not-allowed"
+              disabled
+            >
+              <option value="Admin">Admin</option>
+            </select>
+
+            <select
+              className="w-full border px-3 py-2"
+              value={form.jobTitles[1] || ""}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  jobTitles: ["Admin", e.target.value]
+                }))
+              }
+            >
+              <option value="">Select Secondary Job Title</option>
+              <option value="Manager">Manager</option>
+              <option value="Staff">Staff</option>
+              <option value="HR">HR</option>
+              <option value="Technician">Technician</option>
+              <option value="Supervisor">Supervisor</option>
+              <option value="Intern">Intern</option>
+            </select>
+
+            <input
+              name="passcode"
+              type="password"
+              placeholder="Admin Passcode"
+              className="w-full border px-3 py-2"
+              value={form.passcode}
+              onChange={handleChange}
+            />
+          </>
+        ) : (
+          <>
+            <select
+              className="w-full border px-3 py-2"
+              value={form.jobTitles[0] || ""}
+              onChange={(e) => {
+                const selected = e.target.value;
+                setForm({ ...form, jobTitles: [selected], passcode: "" });
+
+                if (selected === "Admin") {
+                  setIsAdminSelected(true);
+                  setAdminCodeValid(false);
+                } else {
+                  setIsAdminSelected(false);
+                  setAdminCodeValid(false);
+                }
+              }}
+            >
+              <option value="">Select Job Title</option>
+              <option value="Manager">Manager</option>
+              <option value="Staff">Staff</option>
+              <option value="Admin">Admin</option>
+              <option value="HR">HR</option>
+              <option value="Technician">Technician</option>
+              <option value="Supervisor">Supervisor</option>
+              <option value="Intern">Intern</option>
+            </select>
+
+            {/* Admin passcode input if Admin is selected */}
+            {isAdminSelected && !adminCodeValid && (
+              <input
+                type="password"
+                placeholder="Enter Admin Code"
+                className="w-full border px-3 py-2"
+                value={form.passcode}
+                onChange={(e) =>
+                  setForm({ ...form, passcode: e.target.value })
+                }
+                onBlur={() => {
+                  if (form.passcode === "King@2025") {
+                    setAdminCodeValid(true);
+                  } else {
+                    alert("❌ Invalid Admin code. Use other Job Titles.");
+                    setForm({ ...form, jobTitles: [""], passcode: "" });
+                    setIsAdminSelected(false);
+                    setAdminCodeValid(false);
+                  }
+                }}
+              />
+            )}
+
+            {/* Secondary job title if Admin verified */}
+            {adminCodeValid && (
+              <select
+                className="w-full border px-3 py-2"
+                value={form.jobTitles[1] || ""}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    jobTitles: ["Admin", e.target.value]
+                  }))
+                }
+              >
+                <option value="">Select Secondary Job Title</option>
+                <option value="Manager">Manager</option>
+                <option value="Staff">Staff</option>
+                <option value="HR">HR</option>
+                <option value="Technician">Technician</option>
+                <option value="Supervisor">Supervisor</option>
+                <option value="Intern">Intern</option>
+              </select>
+            )}
+          </>
+        )}
+
         <button
           type="submit"
           className="bg-blue-600 text-white px-4 py-2 rounded"
         >
-          Register
+          {isAdminRoute ? "Register Admin" : "Submit Request"}
         </button>
       </form>
+      <p className="text-sm text-center mt-4">
+        Already have an account?{" "}
+        <a href="/login" className="text-blue-600 hover:underline">
+          Login here
+        </a>
+      </p>
     </div>
   );
 };
 
-export default AdminRegister;
+
+export default AdminRegistration;

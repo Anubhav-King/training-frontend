@@ -1,15 +1,15 @@
 import { useUser } from '../context/UserContext'
 import { useEffect, useState } from 'react'
 import axios from 'axios'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { BASE_URL } from '../utils/api'
 
 const Dashboard = () => {
-  const { user } = useUser()
+  const { user, setUser } = useUser()
   const [progress, setProgress] = useState([])
+  const navigate = useNavigate()
 
-  // ✅ Add this line right after getting `user`
-  if (!user) return <p>Loading...</p>;
+  if (!user) return <p>Loading...</p>
 
   useEffect(() => {
     const token = localStorage.getItem('token')
@@ -22,15 +22,31 @@ const Dashboard = () => {
       })
       .then(res => setProgress(res.data))
       .catch(err => console.error('Progress fetch failed', err))
-  }, [])
+  }, [user.userId])
 
   const completed = progress.filter(p => p.completed).length
   const pending = progress.length - completed
 
-  return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">Welcome, {user.fullName}</h1>
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    setUser(null)
+    navigate('/')
+  }
 
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Welcome, {user.name}</h1>
+        <button
+          onClick={handleLogout}
+          className="bg-red-600 text-white px-4 py-2 rounded"
+        >
+          Logout
+        </button>
+      </div>
+
+      {/* Progress Summary */}
       <div className="bg-white shadow-md p-6 rounded-md mb-6">
         <p className="text-lg font-semibold">Your Training Progress</p>
         <div className="flex gap-4 mt-4">
@@ -43,6 +59,7 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Navigation Buttons */}
       <div className="flex gap-4">
         <Link
           to="/topics"
