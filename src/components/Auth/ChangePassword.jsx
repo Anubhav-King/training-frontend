@@ -1,61 +1,67 @@
-import { useUser } from '../../context/UserContext'
-import { useState } from 'react'
-import axios from 'axios'
-import { useNavigate } from 'react-router-dom'
-import { BASE_URL } from '../../utils/api'
+import { useState } from "react";
+import axios from "axios";
+import { BASE_URL } from "../../utils/api";
 
 const ChangePassword = () => {
-  const { user } = useUser()
-  const [newPassword, setNewPassword] = useState('')
-  const [message, setMessage] = useState('')
-  const navigate = useNavigate()
+  const [form, setForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
 
-  const handleChange = async () => {
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem("token");
     try {
-      const token = localStorage.getItem('token')
-      const res = await axios.post(
-        `${BASE_URL}/api/users/change-password`,
-        {
-          userId: user.userId,
-          newPassword
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      )
-
-      setMessage('✅ Password updated.')
-      setTimeout(() => navigate('/'), 1500)
+      await axios.post(`${BASE_URL}/api/users/change-password`, form, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      alert("Password changed successfully");
     } catch (err) {
-      if (err.response && err.response.data && err.response.data.message) {
-        setMessage(`❌ ${err.response.data.message}`)
-      } else {
-        setMessage('❌ Password update failed.')
-      }
+      console.error(err);
+      alert("Password change failed");
     }
-  }
+  };
 
   return (
-    <div className="bg-white p-6 rounded shadow max-w-md mx-auto mt-10">
-      <h2 className="text-xl font-bold mb-4">Change Your Password</h2>
+    <form onSubmit={handleSubmit} className="p-4 max-w-md mx-auto space-y-3">
+      <h2 className="text-xl font-bold">Change Password</h2>
       <input
-        placeholder="New Password"
         type="password"
-        className="input"
-        value={newPassword}
-        onChange={e => setNewPassword(e.target.value)}
+        name="currentPassword"
+        placeholder="Current Password"
+        value={form.currentPassword}
+        onChange={handleChange}
+        className="w-full border px-3 py-2"
+      />
+      <input
+        type="password"
+        name="newPassword"
+        placeholder="New Password"
+        value={form.newPassword}
+        onChange={handleChange}
+        className="w-full border px-3 py-2"
+      />
+      <input
+        type="password"
+        name="confirmPassword"
+        placeholder="Confirm New Password"
+        value={form.confirmPassword}
+        onChange={handleChange}
+        className="w-full border px-3 py-2"
       />
       <button
-        className="bg-green-600 text-white px-4 py-2 rounded mt-4"
-        onClick={handleChange}
+        type="submit"
+        className="bg-green-600 text-white px-4 py-2 rounded"
       >
-        Update Password
+        Change Password
       </button>
-      {message && <p className="mt-2">{message}</p>}
-    </div>
-  )
-}
+    </form>
+  );
+};
 
-export default ChangePassword
+export default ChangePassword;

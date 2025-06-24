@@ -1,97 +1,63 @@
-import { useState } from 'react'
-import axios from 'axios'
-import { useNavigate } from 'react-router-dom'
-import { BASE_URL } from '../../utils/api'
+import { useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { BASE_URL } from "../../utils/api";
 
 const AdminRegister = () => {
-  const [form, setForm] = useState({
-    fullName: '',
-    mobile: '',
-    password: '',
-    jobTitles: [],
-    passcode: ''
-  })
-  const [jobInput, setJobInput] = useState('')
-  const [message, setMessage] = useState('')
-  const navigate = useNavigate()
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const navigate = useNavigate();
 
-  const handleAddJob = () => {
-    if (jobInput && !form.jobTitles.includes(jobInput)) {
-      setForm({ ...form, jobTitles: [...form.jobTitles, jobInput] })
-      setJobInput('')
-    }
-  }
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
-  const handleRegister = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
-      await axios.post(`${BASE_URL}/api/users/register-admin`, form)
-      setMessage('✅ Admin registered. You can now login.')
-      setTimeout(() => navigate('/login'), 1500)
+      await axios.post(`${BASE_URL}/api/users/register-admin`, form);
+      alert("Admin registered successfully!");
+      navigate("/login");
     } catch (err) {
-      setMessage('❌ Error registering admin.')
+      console.error(err);
+      alert("Registration failed");
     }
-  }
+  };
 
   return (
-    <div className="bg-white p-6 rounded shadow max-w-xl mx-auto mt-10">
-      <h2 className="text-2xl font-bold mb-4">Register Admin</h2>
-      <input
-        placeholder="Full Name"
-        className="input"
-        value={form.fullName}
-        onChange={e => setForm({ ...form, fullName: e.target.value })}
-      />
-      <input
-        placeholder="Mobile Number"
-        className="input"
-        value={form.mobile}
-        onChange={e => setForm({ ...form, mobile: e.target.value })}
-      />
-      <input
-        placeholder="Password"
-        type="password"
-        className="input"
-        value={form.password}
-        onChange={e => setForm({ ...form, password: e.target.value })}
-      />
-
-      <div className="mb-2">
+    <div className="p-6 max-w-md mx-auto">
+      <h2 className="text-xl font-bold mb-4">Admin Registration</h2>
+      <form onSubmit={handleSubmit} className="space-y-4">
         <input
-          placeholder="Add Job Title"
-          className="input inline w-2/3"
-          value={jobInput}
-          onChange={e => setJobInput(e.target.value)}
+          name="name"
+          value={form.name}
+          onChange={handleChange}
+          placeholder="Name"
+          className="w-full border px-3 py-2"
+        />
+        <input
+          name="email"
+          value={form.email}
+          onChange={handleChange}
+          placeholder="Email"
+          className="w-full border px-3 py-2"
+        />
+        <input
+          name="password"
+          type="password"
+          value={form.password}
+          onChange={handleChange}
+          placeholder="Password"
+          className="w-full border px-3 py-2"
         />
         <button
-          className="bg-blue-600 text-white px-3 py-2 rounded ml-2"
-          onClick={handleAddJob}
+          type="submit"
+          className="bg-blue-600 text-white px-4 py-2 rounded"
         >
-          Add
+          Register
         </button>
-      </div>
-
-      <div className="mb-2 text-sm text-gray-700">
-        Job Titles: {form.jobTitles.join(', ')}
-      </div>
-
-      <input
-        placeholder="Passcode"
-        type="password"
-        className="input"
-        value={form.passcode}
-        onChange={e => setForm({ ...form, passcode: e.target.value })}
-      />
-
-      <button
-        className="bg-green-600 text-white px-4 py-2 rounded mt-4"
-        onClick={handleRegister}
-      >
-        Register Admin
-      </button>
-
-      {message && <p className="mt-2">{message}</p>}
+      </form>
     </div>
-  )
-}
+  );
+};
 
-export default AdminRegister
+export default AdminRegister;
