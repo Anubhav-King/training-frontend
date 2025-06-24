@@ -5,7 +5,7 @@ import { useUser } from "../../context/UserContext";
 import { BASE_URL } from "../../utils/api";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
+  const [mobile, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { setUser } = useUser();
   const navigate = useNavigate();
@@ -14,7 +14,7 @@ const Login = () => {
     e.preventDefault();
     try {
       const res = await axios.post(`${BASE_URL}/api/users/login`, {
-        email,
+        mobile,
         password,
       });
       const { token, user } = res.data;
@@ -31,9 +31,9 @@ const Login = () => {
     <form onSubmit={handleLogin} className="p-4 max-w-md mx-auto space-y-3">
       <h2 className="text-xl font-bold">Login</h2>
       <input
-        type="email"
-        placeholder="Email"
-        value={email}
+        type="mobile"
+        placeholder="Mobile"
+        value={mobile}
         onChange={(e) => setEmail(e.target.value)}
         className="w-full border px-3 py-2"
       />

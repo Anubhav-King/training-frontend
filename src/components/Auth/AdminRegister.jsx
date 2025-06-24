@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { BASE_URL } from "../../utils/api";
 
 const AdminRegister = () => {
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [form, setForm] = useState({ name: "", mobile: "", password: "" });
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -35,10 +35,10 @@ const AdminRegister = () => {
           className="w-full border px-3 py-2"
         />
         <input
-          name="email"
-          value={form.email}
+          name="mobile"
+          value={form.mobile}
           onChange={handleChange}
-          placeholder="Email"
+          placeholder="Mobile"
           className="w-full border px-3 py-2"
         />
         <input

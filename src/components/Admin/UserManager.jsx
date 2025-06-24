@@ -5,7 +5,7 @@ import { BASE_URL } from "../../utils/api";
 const UserManager = () => {
   const [users, setUsers] = useState([]);
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [mobile, setEmail] = useState("");
 
   const fetchUsers = async () => {
     const token = localStorage.getItem("token");
@@ -19,7 +19,7 @@ const UserManager = () => {
   }, []);
 
   const handleAdd = async () => {
-    const form = { name, email };
+    const form = { name, mobile };
     const token = localStorage.getItem("token");
     const config = { headers: { Authorization: `Bearer ${token}` } };
     await axios.post(`${BASE_URL}/api/users/add-user`, form, config);
@@ -49,10 +49,10 @@ const UserManager = () => {
         onChange={(e) => setName(e.target.value)}
       />
       <input
-        type="email"
-        placeholder="Email"
+        type="mobile"
+        placeholder="Mobile"
         className="block my-1"
-        value={email}
+        value={mobile}
         onChange={(e) => setEmail(e.target.value)}
       />
       <button
@@ -65,7 +65,7 @@ const UserManager = () => {
       <ul>
         {users.map((user) => (
           <li key={user._id} className="mb-2">
-            {user.name} ({user.email}){" "}
+            {user.name} ({user.mobile}){" "}
             <button
               onClick={() => handleDeactivate(user._id)}
               className="text-red-600 ml-2"
