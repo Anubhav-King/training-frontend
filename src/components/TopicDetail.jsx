@@ -1,3 +1,4 @@
+// ✅ FRONTEND: src/components/TopicDetail.jsx
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useUser } from '../context/UserContext'
@@ -15,13 +16,14 @@ const TopicDetail = () => {
     const token = localStorage.getItem('token')
     const headers = { Authorization: `Bearer ${token}` }
 
-    // Fetch topic content
     axios
       .get(`${BASE_URL}/api/topics/${id}`, { headers })
-      .then(res => setTopic(res.data))
+      .then(res => {
+        console.log('📝 fetched topic:', res.data)
+        setTopic(res.data)
+      })
       .catch(err => console.error('Failed to fetch topic', err))
 
-    // Fetch progress
     axios
       .get(`${BASE_URL}/api/progress/${user.userId}`, { headers })
       .then(res => {
@@ -46,8 +48,8 @@ const TopicDetail = () => {
       )}
 
       <div
-        className="prose max-w-none"
-        dangerouslySetInnerHTML={{ __html: topic.content }}
+        className="prose prose-blue max-w-none"
+        dangerouslySetInnerHTML={{ __html: topic.content || '<p>No content available</p>' }}
       />
 
       {!isCompleted && (
@@ -72,6 +74,7 @@ const TopicDetail = () => {
           ✅ This topic is already completed.
         </p>
       )}
+      
     </div>
   )
 }

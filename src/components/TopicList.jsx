@@ -1,3 +1,4 @@
+// ✅ FRONTEND: src/components/TopicList.jsx
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { useUser } from '../context/UserContext'
@@ -14,24 +15,25 @@ const TopicList = () => {
     const token = localStorage.getItem('token')
     const headers = { Authorization: `Bearer ${token}` }
 
-    axios
-      .get(`${BASE_URL}/api/topics/assigned`, { headers })
-      .then(res => setTopics(res.data))
+    axios.get(`${BASE_URL}/api/topics/assigned`, { headers })
+      .then(res => {
+        console.log('📝 topics fetched:', res.data)
+        setTopics(res.data)
+      })
       .catch(err => console.error('Error fetching topics', err))
 
-    axios
-      .get(`${BASE_URL}/api/progress/${user.userId}`, { headers })
+    axios.get(`${BASE_URL}/api/progress/${user.userId}`, { headers })
       .then(res => setProgress(res.data))
       .catch(err => console.error('Error fetching progress', err))
-  }, [user.userId])
+  }, [])
 
-  const getStatus = topic => {
-    const match = progress.find(p => p.topicId._id === topic._id)
+  const getStatus = topicId => {
+    const match = progress.find(p => p.topicId._id === topicId)
     return match?.completed ? 'completed' : 'pending'
   }
 
   const filteredTopics = topics.filter(topic =>
-    showCompleted ? getStatus(topic) === 'completed' : getStatus(topic) === 'pending'
+    showCompleted ? getStatus(topic._id) === 'completed' : getStatus(topic._id) !== 'completed'
   )
 
   return (
@@ -66,9 +68,7 @@ const TopicList = () => {
           className="block bg-white rounded shadow p-4 mb-4 hover:bg-gray-50"
         >
           <h3 className="text-lg font-bold">{topic.title}</h3>
-          {topic.objective && (
-            <p className="text-sm text-gray-600">{topic.objective}</p>
-          )}
+          <p className="text-sm text-gray-600">{topic.objective || 'No objective defined'}</p>
         </Link>
       ))}
     </div>
