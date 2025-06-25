@@ -12,37 +12,26 @@ const TopicList = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('token')
+    const headers = { Authorization: `Bearer ${token}` }
 
-    // Fetch topics assigned to the user
     axios
-      .get(`${BASE_URL}/api/topics/assigned`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+      .get(`${BASE_URL}/api/topics/assigned`, { headers })
       .then(res => setTopics(res.data))
       .catch(err => console.error('Error fetching topics', err))
 
-    // Fetch progress
     axios
-      .get(`${BASE_URL}/api/progress/${user.userId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+      .get(`${BASE_URL}/api/progress/${user.userId}`, { headers })
       .then(res => setProgress(res.data))
       .catch(err => console.error('Error fetching progress', err))
-  }, [])
+  }, [user.userId])
 
-  const getStatus = topicId => {
-    const match = progress.find(p => p.topicId._id === topicId)
+  const getStatus = topic => {
+    const match = progress.find(p => p.topicId._id === topic._id)
     return match?.completed ? 'completed' : 'pending'
   }
 
   const filteredTopics = topics.filter(topic =>
-    showCompleted
-      ? getStatus(topic._id) === 'completed'
-      : getStatus(topic._id) !== 'completed'
+    showCompleted ? getStatus(topic) === 'completed' : getStatus(topic) === 'pending'
   )
 
   return (
@@ -54,17 +43,13 @@ const TopicList = () => {
       <div className="mb-4">
         <button
           onClick={() => setShowCompleted(false)}
-          className={`px-3 py-2 mr-2 rounded ${
-            !showCompleted ? 'bg-blue-600 text-white' : 'bg-gray-200'
-          }`}
+          className={`px-3 py-2 mr-2 rounded ${!showCompleted ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
         >
           Pending
         </button>
         <button
           onClick={() => setShowCompleted(true)}
-          className={`px-3 py-2 rounded ${
-            showCompleted ? 'bg-blue-600 text-white' : 'bg-gray-200'
-          }`}
+          className={`px-3 py-2 rounded ${showCompleted ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
         >
           Completed
         </button>
@@ -81,7 +66,9 @@ const TopicList = () => {
           className="block bg-white rounded shadow p-4 mb-4 hover:bg-gray-50"
         >
           <h3 className="text-lg font-bold">{topic.title}</h3>
-          <p className="text-sm text-gray-600">{topic.objective}</p>
+          {topic.objective && (
+            <p className="text-sm text-gray-600">{topic.objective}</p>
+          )}
         </Link>
       ))}
     </div>

@@ -13,20 +13,17 @@ const TopicDetail = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('token')
+    const headers = { Authorization: `Bearer ${token}` }
 
-    // Fetch topic details
+    // Fetch topic content
     axios
-      .get(`${BASE_URL}/api/topics/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      .get(`${BASE_URL}/api/topics/${id}`, { headers })
       .then(res => setTopic(res.data))
       .catch(err => console.error('Failed to fetch topic', err))
 
-    // Check if completed
+    // Fetch progress
     axios
-      .get(`${BASE_URL}/api/progress/${user.userId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      .get(`${BASE_URL}/api/progress/${user.userId}`, { headers })
       .then(res => {
         const matched = res.data.find(p => p.topicId._id === id)
         if (matched?.completed) setIsCompleted(true)
@@ -38,7 +35,7 @@ const TopicDetail = () => {
 
   return (
     <div className="bg-white p-6 rounded shadow">
-      <h1 className="text-2xl font-bold mb-2">{topic.title}</h1>
+      <h1 className="text-2xl font-bold mb-4">{topic.title}</h1>
 
       {topic.imageUrl && (
         <img
@@ -48,13 +45,13 @@ const TopicDetail = () => {
         />
       )}
 
-      <p className="mb-2"><strong>Objective:</strong> {topic.objective}</p>
-      <p className="mb-2"><strong>Process Explained:</strong> {topic.process}</p>
-      <p className="mb-2"><strong>Task Breakdown:</strong> {topic.breakdown}</p>
-      <p className="mb-2"><strong>Self Check:</strong> {topic.selfCheck}</p>
+      <div
+        className="prose max-w-none"
+        dangerouslySetInnerHTML={{ __html: topic.content }}
+      />
 
       {!isCompleted && (
-        <div className="flex gap-4 mt-4">
+        <div className="flex gap-4 mt-6">
           <button
             onClick={() => navigate(`/quiz/${topic._id}`)}
             className="bg-green-600 text-white px-4 py-2 rounded"
@@ -71,7 +68,9 @@ const TopicDetail = () => {
       )}
 
       {isCompleted && (
-        <p className="mt-4 text-green-700 font-semibold">✅ This topic is already completed.</p>
+        <p className="mt-4 text-green-700 font-semibold">
+          ✅ This topic is already completed.
+        </p>
       )}
     </div>
   )

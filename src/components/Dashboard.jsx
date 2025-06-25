@@ -6,26 +6,36 @@ import { BASE_URL } from '../utils/api'
 
 const Dashboard = () => {
   const { user, setUser } = useUser()
+  const [topics, setTopics] = useState([])
   const [progress, setProgress] = useState([])
   const navigate = useNavigate()
 
-  if (!user) return <p>Loading...</p>
-
   useEffect(() => {
+    if (!user) return
+
     const token = localStorage.getItem('token')
+    const headers = { Authorization: `Bearer ${token}` }
 
     axios
-      .get(`${BASE_URL}/api/progress/${user.userId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      .then(res => setProgress(res.data))
-      .catch(err => console.error('Progress fetch failed', err))
-  }, [user.userId])
+      .get(`${BASE_URL}/api/topics/assigned`, { headers })
+      .then(res => setTopics(res.data))
+      .catch(err => console.error('Error fetching assigned topics', err))
 
-  const completed = progress.filter(p => p.completed).length
-  const pending = progress.length - completed
+    axios
+      .get(`${BASE_URL}/api/progress/${user.userId}`, { headers })
+      .then(res => setProgress(res.data))
+      .catch(err => console.error('Error fetching progress', err))
+  }, [user])
+
+  if (!user) return <p>Loading...</p>
+
+  const getStatus = topic => {
+    const match = progress.find(p => p.topicId._id === topic._id)
+    return match?.completed ? 'completed' : 'pending'
+  }
+
+  const completed = topics.filter(t => getStatus(t) === 'completed').length
+  const pending = topics.length - completed
 
   const handleLogout = () => {
     localStorage.removeItem('token')
