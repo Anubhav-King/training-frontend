@@ -36,6 +36,12 @@ const TopicList = () => {
     showCompleted ? getStatus(topic._id) === 'completed' : getStatus(topic._id) !== 'completed'
   )
 
+  const extractObjective = (html) => {
+    const match = html?.match(/<h2>Objective<\/h2><p>(.*?)<\/p>/i)
+    return match ? match[1] : null
+  }
+
+
   return (
     <div>
       <h2 className="text-xl font-bold mb-4">
@@ -68,7 +74,9 @@ const TopicList = () => {
           className="block bg-white rounded shadow p-4 mb-4 hover:bg-gray-50"
         >
           <h3 className="text-lg font-bold">{topic.title}</h3>
-          <p className="text-sm text-gray-600">{topic.objective || 'No objective defined'}</p>
+          <p className="text-sm text-gray-600">
+            {extractObjective(topic.content) || 'No objective available'}
+          </p>
         </Link>
       ))}
     </div>
