@@ -14,6 +14,7 @@ import Welcome from './components/Welcome'
 import { useUser } from './context/UserContext'
 import Navbar from './components/Navbar'
 
+
 function App() {
   const { user } = useUser()
   const location = useLocation()
@@ -23,6 +24,7 @@ function App() {
     '/login',
     '/register',
     '/register-admin',
+    '/quiz',
     '/'
   ]
 
@@ -48,6 +50,7 @@ function App() {
         <Route path="/admin/users" element={<UserManager />} />
         <Route path="/admin/assign-topics" element={<TopicAssigner />} />
         <Route path="/admin/progress" element={<UserProgressTable />} />
+        <Route path="/quiz/:id" element={<QuizView />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </div>
