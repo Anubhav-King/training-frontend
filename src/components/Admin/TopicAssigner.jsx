@@ -1,13 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { BASE_URL } from "../../utils/api";
-
-const JOB_TITLES = [
-  "Manager", "Staff", "Admin", "HR", "Technician", "Supervisor", "Intern",
-];
-
-
-
+import { JOB_TITLES_WITH_ALL_OPTION } from "../../constants/jobTitles";
 
 const formatDateTime = (ts) => {
   const d = new Date(ts);
@@ -284,7 +278,7 @@ const TopicAssigner = () => {
           <div className="mb-4">
             <label className="block text-sm font-medium">Select Job Titles:</label>
             <div className="grid grid-cols-2 gap-2 mt-2">
-              {JOB_TITLES.map((title) => (
+              {JOB_TITLES_WITH_ALL_OPTION.map((title) => (
                 <label key={title} className="flex items-center space-x-2">
                   <input
                     type="checkbox"
@@ -438,7 +432,7 @@ const TopicAssigner = () => {
                 {isEditing ? (
                   <>
                     <div className="grid grid-cols-2 gap-2 mb-2">
-                      {JOB_TITLES.map((title) => (
+                      {JOB_TITLES_WITH_ALL_OPTION.map((title) => (
                         <label key={title} className="flex items-center space-x-2">
                           <input
                             type="checkbox"

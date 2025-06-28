@@ -1,10 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { BASE_URL } from '../../utils/api';
-
-const JOB_TITLES = [
-  "Manager", "Staff", "Admin", "HR", "Technician", "Supervisor", "Intern"
-];
+import { JOB_TITLES } from '../../constants/jobTitles'; // ✅ centralized import
 
 const UserManager = () => {
   const [users, setUsers] = useState([]);
@@ -84,19 +81,38 @@ const UserManager = () => {
   };
 
   const saveJobTitles = async (userId) => {
+    const originalUser = users.find(u => u._id === userId);
+    const hadAdmin = originalUser.jobTitles?.includes("Admin");
+    const addingAdmin = tempJobTitles.includes("Admin") && !hadAdmin;
+
+    // ✅ Step 1: Verify Change Code
     const code = prompt("Enter passcode to save changes");
     if (code !== "Boss@2025") {
-      alert("Incorrect passcode.");
+      alert("❌ Incorrect change passcode.");
       return;
     }
 
+    // ✅ Step 2: Verify Admin Passcode if adding Admin role
+    if (addingAdmin) {
+      const adminCode = prompt("Enter Admin Passcode to assign Admin title");
+      if (adminCode !== "King@2025") {
+        alert("❌ Invalid Admin passcode. Cannot assign Admin role.");
+        return;
+      }
+    }
+
+    // ✅ Proceed to update
     const token = localStorage.getItem("token");
     const config = { headers: { Authorization: `Bearer ${token}` } };
+
     try {
-      await axios.patch(`${BASE_URL}/api/users/update-jobtitles/${userId}`, { jobTitles: tempJobTitles, code }, config);
+      await axios.patch(`${BASE_URL}/api/users/update-jobtitles/${userId}`, {
+        jobTitles: tempJobTitles,
+        code
+      }, config);
       setEditingUserId(null);
       fetchUsers();
-      alert("Job titles updated successfully.");
+      alert("✅ Job titles updated successfully.");
     } catch (err) {
       console.error(err.response?.data || err.message);
       alert("Failed to update job titles: " + (err.response?.data?.error || err.message));

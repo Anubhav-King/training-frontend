@@ -2,6 +2,8 @@ import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { BASE_URL } from "../../utils/api";
+import { JOB_TITLES } from "../../constants/jobTitles";
+
 
 const AdminRegistration = () => {
   const isAdminRoute = window.location.pathname === "/admin-register";
@@ -31,6 +33,12 @@ const AdminRegistration = () => {
       alert("Name and Mobile are required.");
       return;
     }
+
+    if (!/^\d{10}$/.test(form.mobile)) {
+      alert("Please enter a valid 10-digit mobile number.");
+      return;
+    }
+
 
     if (!isAdminRoute && form.jobTitles[0] === "Admin") {
       if (!adminCodeValid) {
@@ -81,9 +89,15 @@ const AdminRegistration = () => {
         <input
           name="mobile"
           value={form.mobile}
-          onChange={handleChange}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (/^\d{0,10}$/.test(val)) {
+              setForm({ ...form, mobile: val });
+            }
+          }}
           placeholder="Mobile"
           className="w-full border px-3 py-2"
+          inputMode="numeric"
         />
 
         {/* Job Title Selection */}
@@ -108,12 +122,11 @@ const AdminRegistration = () => {
               }
             >
               <option value="">Select Secondary Job Title</option>
-              <option value="Manager">Manager</option>
-              <option value="Staff">Staff</option>
-              <option value="HR">HR</option>
-              <option value="Technician">Technician</option>
-              <option value="Supervisor">Supervisor</option>
-              <option value="Intern">Intern</option>
+              {JOB_TITLES.filter(title => title !== "Admin").map((title) => (
+                <option key={title} value={title}>
+                  {title}
+                </option>
+              ))}
             </select>
 
             <input
@@ -144,14 +157,13 @@ const AdminRegistration = () => {
               }}
             >
               <option value="">Select Job Title</option>
-              <option value="Manager">Manager</option>
-              <option value="Staff">Staff</option>
-              <option value="Admin">Admin</option>
-              <option value="HR">HR</option>
-              <option value="Technician">Technician</option>
-              <option value="Supervisor">Supervisor</option>
-              <option value="Intern">Intern</option>
+              {JOB_TITLES.map((title) => (
+                <option key={title} value={title}>
+                  {title}
+                </option>
+              ))}
             </select>
+
 
             {/* Admin passcode input if Admin is selected */}
             {isAdminSelected && !adminCodeValid && (
@@ -189,12 +201,11 @@ const AdminRegistration = () => {
                 }
               >
                 <option value="">Select Secondary Job Title</option>
-                <option value="Manager">Manager</option>
-                <option value="Staff">Staff</option>
-                <option value="HR">HR</option>
-                <option value="Technician">Technician</option>
-                <option value="Supervisor">Supervisor</option>
-                <option value="Intern">Intern</option>
+                {JOB_TITLES.filter(title => title !== "Admin").map((title) => (
+                  <option key={title} value={title}>
+                    {title}
+                  </option>
+                ))}
               </select>
             )}
           </>

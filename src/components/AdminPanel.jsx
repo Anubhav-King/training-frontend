@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useState, useRef } from 'react';
 import { BASE_URL } from '../utils/api';
 import UpdateLogsModal from './UpdateLogsModal';
+import TopicImageUploader from './Admin/TopicImageUploader';
 
 const AdminPanel = () => {
   const [showLogs, setShowLogs] = useState(false);
@@ -171,6 +172,14 @@ const AdminPanel = () => {
         >
           📘 View Topic Update Logs
         </button>
+
+        <Link
+          to="/admin/topic-images"
+          className="bg-pink-600 text-white px-4 py-2 rounded text-center hover:bg-pink-700 transition"
+        >
+          🖼 Upload Topic Images
+        </Link>
+
       </div>
 
       {showLogs && <UpdateLogsModal onClose={() => setShowLogs(false)} />}
