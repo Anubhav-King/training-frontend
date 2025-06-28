@@ -14,10 +14,14 @@ import Welcome from "./components/Welcome";
 import { useUser } from "./context/UserContext";
 import Navbar from "./components/Navbar";
 import TopicImageUploader from "./components/Admin/TopicImageUploader";
+import { useUpload } from "./context/UploadContext";
 
 function App() {
   const { user } = useUser();
   const location = useLocation();
+  const { uploading, uploadProgress } = useUpload();
+
+   console.log("Upload Progress State:", uploadProgress, "Uploading:", uploading);
 
   // Routes where Navbar should not show
   const hideNavbarRoutes = [
@@ -33,8 +37,15 @@ function App() {
       location.pathname === route || location.pathname.startsWith(route + "/"),
   );
 
+  // Calculate average upload progress %
+  const progressValues = Object.values(uploadProgress);
+  const totalProgress =
+    progressValues.length > 0
+      ? Math.floor(progressValues.reduce((a, b) => a + b, 0) / progressValues.length)
+      : 0;
+
   return (
-    <div className="max-w-5xl mx-auto p-4">
+    <div className="max-w-5xl mx-auto p-4 relative">
       {!shouldHideNavbar && <Navbar />}
 
       <Routes>
@@ -54,6 +65,18 @@ function App() {
         <Route path="/admin/topic-images" element={<TopicImageUploader />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
+
+      {uploading && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black bg-opacity-50"
+          style={{ backdropFilter: "blur(3px)" }}
+        >
+          <div className="text-white text-lg mb-4 font-semibold">Uploading... Please wait</div>
+          <div className="w-64 h-4 bg-gray-700 rounded overflow-hidden relative">
+            <div className="absolute inset-0 bg-blue-500 animate-pulse"></div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

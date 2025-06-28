@@ -3,6 +3,7 @@ import axios from "axios";
 import { BASE_URL } from "../../utils/api";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import ImagePreviewModal from "../common/ImagePreviewModal";
+import { useUpload } from "../../context/UploadContext";
 
 const sections = ["Objective", "Process Explained", "Task Breakdown", "Self Check"];
 
@@ -20,13 +21,14 @@ const TopicImageUploader = () => {
   const [selectedTopicId, setSelectedTopicId] = useState("");
   const [selectedSection, setSelectedSection] = useState(sections[0]);
   const [uploadFiles, setUploadFiles] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState({}); // key: file.name, value: percentage
   const [previewIndex, setPreviewIndex] = useState(null);
   const [previewImages, setPreviewImages] = useState([]);
   const dropdownRef = useRef(null);
 
-  // Fetch all topics on mount
+  // Use upload context
+  const { uploading, setUploading, uploadProgress, setUploadProgress } = useUpload();
+
+  // Fetch topics
   useEffect(() => {
     const fetchTopics = async () => {
       try {
@@ -57,21 +59,17 @@ const TopicImageUploader = () => {
     (topic) => topic.title && topic.title.toLowerCase().includes(search.toLowerCase())
   );
 
-
-  // Delete image from section
+  // Delete image handler (same as before)
   const handleDeleteImage = async (topicId, section, url) => {
     if (!window.confirm("Are you sure you want to delete this image?")) return;
 
     try {
       const token = localStorage.getItem("token");
-
-      // Fetch current topic images from backend to update array without deleted url
       const topicRes = await axios.get(`${BASE_URL}/api/topics/${topicId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const topic = topicRes.data;
 
-      // Remove URL from the correct section array
       const key = sectionKeyMap[section];
       if (!key) return;
 
@@ -79,20 +77,18 @@ const TopicImageUploader = () => {
         ? topic.images[key].filter((imgUrl) => imgUrl !== url)
         : [];
 
-      // PATCH updated array back to backend
       await axios.patch(
         `${BASE_URL}/api/topics/${topicId}/images`,
         {
           section,
           urls: updatedImages,
-          replace: true, // indicate replace, not append (backend needs to support this)
+          replace: true,
         },
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
 
-      // Update frontend state after delete
       setTopics((prev) =>
         prev.map((t) =>
           t._id === topicId
@@ -112,40 +108,50 @@ const TopicImageUploader = () => {
     }
   };
 
-  // Upload images button handler
+  // Upload images handler
   const handleUploadClick = async () => {
     if (!selectedTopicId) return alert("Please select a topic");
     if (uploadFiles.length === 0) return alert("Please select image(s) to upload");
 
-    setLoading(true);
-    const uploadedUrls = [];
-    const progressMap = {};
+    setUploading(true);
+    setUploadProgress({}); // reset before starting
 
     try {
-      for (const file of uploadFiles) {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("upload_preset", "unsigned_topic_uploads");
-        formData.append(
-          "folder",
-          `topics/${selectedTopicId}/${selectedSection.toLowerCase().replace(/\s/g, "_")}`
-        );
+      const uploadedUrls = [];
 
-        const res = await axios.post(
-          "https://api.cloudinary.com/v1_1/dwwkeitzv/image/upload",
-          formData,
-          {
-            onUploadProgress: (progressEvent) => {
-              const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-              progressMap[file.name] = percent;
-              setUploadProgress({ ...progressMap });
-            },
-          }
-        );
+      // Upload all files in parallel, tracking each progress separately
+      await Promise.all(
+        uploadFiles.map((file) => {
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append("upload_preset", "unsigned_topic_uploads");
+          formData.append(
+            "folder",
+            `topics/${selectedTopicId}/${selectedSection.toLowerCase().replace(/\s/g, "_")}`
+          );
 
-        uploadedUrls.push(res.data.secure_url);
-      }
+          return axios.post(
+            "https://api.cloudinary.com/v1_1/dwwkeitzv/image/upload",
+            formData,
+            {
+              onUploadProgress: (progressEvent) => {
+                const percent = Math.round(
+                  (progressEvent.loaded * 100) / progressEvent.total
+                );
+                //console.log("Uploading", file.name, percent, "%");
+                setUploadProgress((prev) => ({
+                  ...prev,
+                  [file.name]: percent,
+                }));
+              },
+            }
+          ).then((res) => {
+            uploadedUrls.push(res.data.secure_url);
+          });
+        })
+      );
 
+      // Patch topic images after all uploads finish
       const token = localStorage.getItem("token");
       await axios.patch(
         `${BASE_URL}/api/topics/${selectedTopicId}/images`,
@@ -158,6 +164,7 @@ const TopicImageUploader = () => {
         }
       );
 
+      // Update topic state in UI
       const key = sectionKeyMap[selectedSection];
       setTopics((prev) =>
         prev.map((t) =>
@@ -174,6 +181,7 @@ const TopicImageUploader = () => {
       );
 
       alert(`Uploaded ${uploadedUrls.length} image(s) to ${selectedSection}`);
+
       setUploadFiles([]);
       setUploadProgress({});
       document.getElementById("image-upload-input").value = "";
@@ -181,12 +189,16 @@ const TopicImageUploader = () => {
       console.error("Upload failed", err);
       alert("Failed to upload images");
     } finally {
-      setLoading(false);
+      setUploading(false);
     }
   };
 
 
+
+  // Drag and drop reorder handler (disable while uploading)
   const handleDragEnd = async (result) => {
+    if (uploading) return; // prevent reorder while uploading
+
     const { destination, source } = result;
 
     if (!destination || destination.index === source.index) return;
@@ -198,7 +210,6 @@ const TopicImageUploader = () => {
     const [moved] = reordered.splice(source.index, 1);
     reordered.splice(destination.index, 0, moved);
 
-    // Update backend
     try {
       const token = localStorage.getItem("token");
       await axios.patch(
@@ -213,7 +224,6 @@ const TopicImageUploader = () => {
         }
       );
 
-      // Update local state
       setTopics((prev) =>
         prev.map((t) =>
           t._id === selectedTopicId
@@ -233,9 +243,8 @@ const TopicImageUploader = () => {
     }
   };
 
-
   return (
-    <div className={`p-4 max-w-2xl mx-auto relative ${loading ? "pointer-events-none opacity-50" : ""}`}>
+    <div className={`p-4 max-w-2xl mx-auto relative ${uploading ? "pointer-events-none opacity-50" : ""}`}>
       <h2 className="text-xl font-bold mb-4">🖼 Upload Images to Topic Sections</h2>
 
       {/* Dropdown with search */}
@@ -246,7 +255,7 @@ const TopicImageUploader = () => {
           type="button"
           aria-haspopup="listbox"
           aria-expanded={dropdownOpen}
-          disabled={loading}
+          disabled={uploading}
         >
           {selectedTopicId
             ? topics.find((t) => t._id === selectedTopicId)?.title || "Select a topic"
@@ -262,6 +271,7 @@ const TopicImageUploader = () => {
               className="w-full px-3 py-2 border-b"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              disabled={uploading}
             />
             <ul
               className="max-h-48 overflow-auto"
@@ -303,16 +313,16 @@ const TopicImageUploader = () => {
       {/* Section selector */}
       <div className="flex gap-2 mb-4">
         {sections.map((section) => (
-            <button
-              key={section}
-              className={`px-3 py-1 rounded border disabled:opacity-50 ${
-                selectedSection === section
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-200 hover:bg-gray-300"
-              }`}
-              onClick={() => setSelectedSection(section)}
-              disabled={loading}
-            >
+          <button
+            key={section}
+            className={`px-3 py-1 rounded border disabled:opacity-50 ${
+              selectedSection === section
+                ? "bg-blue-600 text-white"
+                : "bg-gray-200 hover:bg-gray-300"
+            }`}
+            onClick={() => setSelectedSection(section)}
+            disabled={uploading}
+          >
             {section}
           </button>
         ))}
@@ -324,7 +334,7 @@ const TopicImageUploader = () => {
           <h3 className="font-semibold mb-2">
             Current images in "{selectedSection}" section:
           </h3>
-          <DragDropContext onDragEnd={loading ? () => {} : handleDragEnd}>
+          <DragDropContext onDragEnd={handleDragEnd}>
             <Droppable droppableId="images" direction="horizontal">
               {(provided) => (
                 <div
@@ -362,6 +372,7 @@ const TopicImageUploader = () => {
                             className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-700"
                             title="Delete image"
                             type="button"
+                            disabled={uploading}
                           >
                             &times;
                           </button>
@@ -385,41 +396,29 @@ const TopicImageUploader = () => {
           multiple
           accept="image/*"
           onChange={(e) => setUploadFiles(Array.from(e.target.files))}
-          disabled={loading}
+          disabled={uploading}
           className="border rounded px-2 py-1"
         />
         <button
           onClick={handleUploadClick}
-          disabled={loading}
+          disabled={uploading}
           className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
         >
-          {loading ? "Uploading..." : "Upload"}
+          {uploading ? "Uploading..." : "Upload"}
         </button>
       </div>
+
       {uploadFiles.length > 0 && (
         <div className="mt-4 w-full">
           {uploadFiles.map((file) => (
             <div key={file.name} className="mb-2">
               <div className="text-sm text-gray-700 mb-1">{file.name}</div>
-              <div className="w-full h-2 bg-gray-200 rounded">
-                <div
-                  className="h-full bg-blue-500 rounded"
-                  style={{ width: `${uploadProgress[file.name] || 0}%` }}
-                />
-              </div>
-              <div className="text-xs text-right text-gray-600">
-                {uploadProgress[file.name] || 0}%
-              </div>
+              {/* Remove or replace the progress bar here if you don't want it */}
             </div>
           ))}
         </div>
       )}
 
-      {loading && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-white bg-opacity-70">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
-        </div>
-      )}
       <ImagePreviewModal
         images={previewImages}
         index={previewIndex}

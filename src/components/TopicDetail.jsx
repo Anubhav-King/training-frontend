@@ -13,6 +13,12 @@ const TopicDetail = () => {
   const [previewImages, setPreviewImages] = useState([]);
   const [previewIndex, setPreviewIndex] = useState(null);
   const navigate = useNavigate()
+  const sectionKeyMap = {
+    Objective: "objective",
+    "Process Explained": "process",
+    "Task Breakdown": "task",
+    "Self Check": "selfCheck",
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('token')
@@ -45,8 +51,8 @@ const TopicDetail = () => {
       <h1 className="text-2xl font-bold mb-4">{topic.title}</h1>
 
       {['Objective', 'Process Explained', 'Task Breakdown', 'Self Check'].map(section => {
-        const content = extractSection(topic.content, section)
-        const imageKey = section.toLowerCase().replace(/\s/g, '')
+        const content = extractSection(topic.content, section);
+        const imageKey = sectionKeyMap[section];
 
         return (
           <div key={section} className="mb-6">
@@ -66,10 +72,9 @@ const TopicDetail = () => {
                   }}
                 />
               ))}
-
             </div>
           </div>
-        )
+        );
       })}
 
       {!isCompleted && (
