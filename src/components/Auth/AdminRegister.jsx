@@ -56,12 +56,16 @@ const AdminRegistration = () => {
       : `${BASE_URL}/api/users/register`;
 
     const payload = {
-      ...form,
+      name: form.name,
+      mobile: form.mobile,
+      password: form.password,
       jobTitles:
         isAdminRoute || (form.jobTitles[0] === "Admin" && adminCodeValid)
           ? [form.jobTitles[1]]
-          : [form.jobTitles[0]]
+          : [form.jobTitles[0]],
+      isAdmin: isAdminRoute || (form.jobTitles[0] === "Admin" && adminCodeValid)
     };
+
 
     try {
       await axios.post(endpoint, payload);
