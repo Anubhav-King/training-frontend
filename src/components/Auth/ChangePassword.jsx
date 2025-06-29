@@ -19,12 +19,31 @@ const ChangePassword = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem("token");
+
+    if (!form.newPassword || !form.confirmPassword || !form.currentPassword) {
+      alert("Please fill all fields");
+      return;
+    }
+
+    if (form.newPassword !== form.confirmPassword) {
+      alert("New passwords do not match");
+      return;
+    }
+
+    if (form.newPassword === "Monday01") {
+      alert("You must choose a new password");
+      return;
+    }
+
     try {
-      await axios.post(`${BASE_URL}/api/users/change-password`, form, {
+      await axios.post(`${BASE_URL}/api/users/change-password`, {
+        newPassword: form.newPassword,
+      }, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
       alert("Password changed successfully");
-      navigate("/"); // ✅ redirect to dashboard
+      window.location.href = "/"; // or use navigate("/")
     } catch (err) {
       console.error(err);
       alert("Password change failed");
