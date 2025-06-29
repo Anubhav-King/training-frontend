@@ -91,7 +91,23 @@ const AdminRegistration = () => {
       return;
     }
 
-    // Send OTP
+    try {
+      // 🔍 Check if mobile already exists
+      const response = await axios.post(`${BASE_URL}/api/users/check-mobile`, {
+        mobile: form.mobile,
+      });
+
+      if (response.data.exists) {
+        alert("❌ This mobile number is already registered. Please login or use a different number.");
+        return;
+      }
+    } catch (err) {
+      console.error("Mobile check failed:", err);
+      alert("Something went wrong while verifying mobile number.");
+      return;
+    }
+
+    // ✅ Proceed to send OTP
     await sendOtp();
   };
 
