@@ -22,31 +22,24 @@ const Login = () => {
 
       const { token, user, mustChangePassword } = res.data;
 
-      if (!user.active || !user.approvedBy) {
-        const names = adminNames.length ? adminNames.join(", ") : "Admin(s)";
-        alert(`❌ User is not yet activated.\nKindly contact Admin(s): ${names}`);
-        return;
-      }
-
-      // Proceed with login
+      // ✅ Successful login
       localStorage.setItem("token", token);
       setUser(user);
       navigate("/");
     } catch (err) {
       console.error(err);
       const backendMessage = err.response?.data?.error || "";
+      const adminList = adminNames.length ? adminNames.join(", ") : "an Admin";
+
       if (backendMessage === "User is not yet activated") {
-        const adminList = adminNames.length ? adminNames.join(", ") : "an Admin";
         alert(`❌ Your account is not yet activated.\nPlease contact ${adminList}.`);
       } else if (backendMessage === "User has been deactivated") {
-        const adminList = adminNames.length ? adminNames.join(", ") : "an Admin";
         alert(`❌ Your account has been deactivated.\nPlease contact ${adminList}.`);
       } else {
         alert(backendMessage || "Login failed. Please try again.");
       }
     }
   };
-
 
   useEffect(() => {
     // Fetch admin names
