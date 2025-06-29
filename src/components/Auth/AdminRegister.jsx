@@ -3,7 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { BASE_URL } from "../../utils/api";
 import { JOB_TITLES } from "../../constants/jobTitles";
-
+import { auth, RecaptchaVerifier, signInWithPhoneNumber } from "../../firebase";
 
 const AdminRegistration = () => {
   const isAdminRoute = window.location.pathname === "/admin-register";
@@ -18,6 +18,11 @@ const AdminRegistration = () => {
 
   const [isAdminSelected, setIsAdminSelected] = useState(false);
   const [adminCodeValid, setAdminCodeValid] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [confirmationResult, setConfirmationResult] = useState(null);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
 
   const navigate = useNavigate();
 
@@ -25,10 +30,52 @@ const AdminRegistration = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const sendOtp = async () => {
+    if (!/^\d{10}$/.test(form.mobile)) {
+      alert("Enter a valid 10-digit mobile number first.");
+      return;
+    }
+
+    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+      size: "invisible",
+      callback: () => {},
+    });
+
+    const appVerifier = window.recaptchaVerifier;
+    const fullPhone = `+91${form.mobile}`;
+
+    try {
+      const confirmation = await signInWithPhoneNumber(auth, fullPhone, appVerifier);
+      setConfirmationResult(confirmation);
+      setOtpSent(true);
+      alert("OTP sent to your mobile.");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to send OTP. Please try again.");
+    }
+  };
+
+  const verifyOtp = async () => {
+    if (!otp || !confirmationResult) {
+      alert("Enter the OTP sent to your phone.");
+      return;
+    }
+
+    setVerifyingOtp(true);
+    try {
+      await confirmationResult.confirm(otp);
+      setOtpVerified(true);
+      alert("✅ OTP verified.");
+    } catch (err) {
+      alert("❌ Invalid OTP.");
+    } finally {
+      setVerifyingOtp(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validation
     if (!form.name || !form.mobile) {
       alert("Name and Mobile are required.");
       return;
@@ -39,6 +86,10 @@ const AdminRegistration = () => {
       return;
     }
 
+    if (!otpVerified) {
+      alert("Please verify OTP first.");
+      return;
+    }
 
     if (!isAdminRoute && form.jobTitles[0] === "Admin") {
       if (!adminCodeValid) {
@@ -51,25 +102,21 @@ const AdminRegistration = () => {
       }
     }
 
-    const endpoint = isAdminRoute
-      ? `${BASE_URL}/api/users/register`
-      : `${BASE_URL}/api/users/register`;
-
     const isAdmin = isAdminRoute || (form.jobTitles[0] === "Admin" && adminCodeValid);
-const jobTitles = isAdmin
-  ? ["Admin", form.jobTitles[1]]
-  : [form.jobTitles[0]];
+    const jobTitles = isAdmin
+      ? ["Admin", form.jobTitles[1]]
+      : [form.jobTitles[0]];
 
-const payload = {
-  name: form.name,
-  mobile: form.mobile,
-  password: form.password,
-  jobTitles,
-  isAdmin
-};
+    const payload = {
+      name: form.name,
+      mobile: form.mobile,
+      password: form.password,
+      jobTitles,
+      isAdmin
+    };
 
     try {
-      await axios.post(endpoint, payload);
+      await axios.post(`${BASE_URL}/api/users/register`, payload);
       alert(isAdminRoute ? "Admin registered successfully!" : "User request submitted!");
       navigate("/login");
     } catch (err) {
@@ -104,6 +151,36 @@ const payload = {
           className="w-full border px-3 py-2"
           inputMode="numeric"
         />
+
+        {!otpSent && (
+          <button
+            type="button"
+            className="bg-blue-500 text-white px-3 py-2 rounded"
+            onClick={sendOtp}
+          >
+            Send OTP
+          </button>
+        )}
+
+        {otpSent && !otpVerified && (
+          <>
+            <input
+              type="text"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              placeholder="Enter OTP"
+              className="w-full border px-3 py-2"
+            />
+            <button
+              type="button"
+              className="bg-green-500 text-white px-3 py-2 rounded"
+              onClick={verifyOtp}
+              disabled={verifyingOtp}
+            >
+              {verifyingOtp ? "Verifying..." : "Verify OTP"}
+            </button>
+          </>
+        )}
 
         {/* Job Title Selection */}
         <label className="block font-medium">Job Title(s)</label>
@@ -169,8 +246,6 @@ const payload = {
               ))}
             </select>
 
-
-            {/* Admin passcode input if Admin is selected */}
             {isAdminSelected && !adminCodeValid && (
               <input
                 type="password"
@@ -193,7 +268,6 @@ const payload = {
               />
             )}
 
-            {/* Secondary job title if Admin verified */}
             {adminCodeValid && (
               <select
                 className="w-full border px-3 py-2"
@@ -223,6 +297,9 @@ const payload = {
           {isAdminRoute ? "Register Admin" : "Submit Request"}
         </button>
       </form>
+
+      <div id="recaptcha-container"></div>
+
       <p className="text-sm text-center mt-4">
         Already have an account?{" "}
         <a href="/login" className="text-blue-600 hover:underline">
@@ -232,6 +309,5 @@ const payload = {
     </div>
   );
 };
-
 
 export default AdminRegistration;
