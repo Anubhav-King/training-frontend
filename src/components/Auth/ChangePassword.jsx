@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom"; // ✅ added
 import { BASE_URL } from "../../utils/api";
 
 const ChangePassword = () => {
@@ -8,6 +9,8 @@ const ChangePassword = () => {
     newPassword: "",
     confirmPassword: "",
   });
+
+  const navigate = useNavigate(); // ✅ added
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -21,6 +24,7 @@ const ChangePassword = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       alert("Password changed successfully");
+      navigate("/"); // ✅ redirect to dashboard
     } catch (err) {
       console.error(err);
       alert("Password change failed");
