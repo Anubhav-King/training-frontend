@@ -70,7 +70,6 @@ const AdminRegistration = () => {
       await confirmationResult.confirm(otp);
       setOtpStage("verified");
       alert("✅ OTP verified.");
-      submitForm(); // Proceed with registration
     } catch (err) {
       console.error(err);
       alert("❌ Invalid OTP.");
