@@ -131,7 +131,7 @@ const AdminRegistration = () => {
     try {
       console.log(payload);
       await axios.post(`${BASE_URL}/api/users/register`, payload);
-      alert(isAdminRoute ? "Admin registered successfully!" : "User request submitted!");
+      alert(isAdminRoute ? "Admin registered successfully!" : "User request submitted!. Password will be *Monday01*");
       navigate("/login");
     } catch (err) {
       console.error(err);

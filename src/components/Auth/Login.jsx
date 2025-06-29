@@ -19,7 +19,21 @@ const Login = () => {
         mobile,
         password,
       });
-      const { token, user } = res.data;
+
+      const { token, user, mustChangePassword } = res.data;
+
+      if (!user.active || !user.approvedBy) {
+        // If not yet approved
+        const res2 = await axios.get(`${BASE_URL}/api/users/list`);
+        const admins = res2.data.filter((u) => u.isAdmin);
+        const names = admins.map((a) => a.name).join(", ");
+        alert(
+          `❌ User is not yet activated.\nKindly contact Admin(s): ${names}`
+        );
+        return;
+      }
+
+      // Proceed with login
       localStorage.setItem("token", token);
       setUser(user);
       navigate("/");
@@ -27,9 +41,10 @@ const Login = () => {
       console.error(err);
       const message =
         err.response?.data?.error || "Login failed. Please try again.";
-      alert(message);
+      alert(`❌ ${message}`);
     }
   };
+
 
   useEffect(() => {
     // Fetch admin names
