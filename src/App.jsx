@@ -29,6 +29,7 @@ function App() {
     "/register",
     "/register-admin",
     "/quiz",
+    "/change-password"
     "/",
   ];
 
