@@ -18,11 +18,10 @@ const AdminRegistration = () => {
 
   const [isAdminSelected, setIsAdminSelected] = useState(false);
   const [adminCodeValid, setAdminCodeValid] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
+
+  const [otpStage, setOtpStage] = useState("none"); // none | sent | verifying | verified
   const [otp, setOtp] = useState("");
   const [confirmationResult, setConfirmationResult] = useState(null);
-  const [verifyingOtp, setVerifyingOtp] = useState(false);
-  const [otpVerified, setOtpVerified] = useState(false);
 
   const navigate = useNavigate();
 
@@ -30,28 +29,26 @@ const AdminRegistration = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const sendOtp = async () => {
-    if (!/^\d{10}$/.test(form.mobile)) {
-      alert("Enter a valid 10-digit mobile number first.");
-      return;
+  const triggerRecaptcha = () => {
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
+        size: "invisible",
+        callback: () => {},
+      });
     }
+    return window.recaptchaVerifier;
+  };
 
-    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-      size: "invisible",
-      callback: () => {},
-    });
-
-    const appVerifier = window.recaptchaVerifier;
+  const sendOtp = async () => {
     const fullPhone = `+91${form.mobile}`;
-
     try {
-      const confirmation = await signInWithPhoneNumber(auth, fullPhone, appVerifier);
+      const confirmation = await signInWithPhoneNumber(auth, fullPhone, triggerRecaptcha());
       setConfirmationResult(confirmation);
-      setOtpSent(true);
+      setOtpStage("sent");
       alert("OTP sent to your mobile.");
     } catch (err) {
       console.error(err);
-      alert("Failed to send OTP. Please try again.");
+      alert("Failed to send OTP. Try again.");
     }
   };
 
@@ -61,21 +58,23 @@ const AdminRegistration = () => {
       return;
     }
 
-    setVerifyingOtp(true);
+    setOtpStage("verifying");
     try {
       await confirmationResult.confirm(otp);
-      setOtpVerified(true);
+      setOtpStage("verified");
       alert("✅ OTP verified.");
+      submitForm(); // Proceed with registration
     } catch (err) {
+      console.error(err);
       alert("❌ Invalid OTP.");
-    } finally {
-      setVerifyingOtp(false);
+      setOtpStage("sent");
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleInitialSubmit = async (e) => {
     e.preventDefault();
 
+    // Validate input
     if (!form.name || !form.mobile) {
       alert("Name and Mobile are required.");
       return;
@@ -86,26 +85,13 @@ const AdminRegistration = () => {
       return;
     }
 
-    if (!otpVerified) {
-      alert("Please verify OTP first.");
-      return;
-    }
+    // Send OTP
+    await sendOtp();
+  };
 
-    if (!isAdminRoute && form.jobTitles[0] === "Admin") {
-      if (!adminCodeValid) {
-        alert("Admin code not verified.");
-        return;
-      }
-      if (!form.jobTitles[1]) {
-        alert("Please select a secondary job title.");
-        return;
-      }
-    }
-
+  const submitForm = async () => {
     const isAdmin = isAdminRoute || (form.jobTitles[0] === "Admin" && adminCodeValid);
-    const jobTitles = isAdmin
-      ? ["Admin", form.jobTitles[1]]
-      : [form.jobTitles[0]];
+    const jobTitles = isAdmin ? ["Admin", form.jobTitles[1]] : [form.jobTitles[0]];
 
     const payload = {
       name: form.name,
@@ -125,18 +111,27 @@ const AdminRegistration = () => {
     }
   };
 
+  const resetOtpFlow = () => {
+    setOtp("");
+    setOtpStage("none");
+    setConfirmationResult(null);
+  };
+
   return (
     <div className="p-6 max-w-md mx-auto">
       <h2 className="text-xl font-bold mb-4">
         {isAdminRoute ? "Admin Registration" : "User Registration"}
       </h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
+
+      <form onSubmit={otpStage === "none" ? handleInitialSubmit : (e) => e.preventDefault()} className="space-y-4">
+        {/* Name & Mobile */}
         <input
           name="name"
           value={form.name}
           onChange={handleChange}
           placeholder="Name"
           className="w-full border px-3 py-2"
+          disabled={otpStage !== "none"}
         />
         <input
           name="mobile"
@@ -150,19 +145,20 @@ const AdminRegistration = () => {
           placeholder="Mobile"
           className="w-full border px-3 py-2"
           inputMode="numeric"
+          disabled={otpStage !== "none"}
         />
 
-        {!otpSent && (
+        {otpStage === "none" && (
           <button
-            type="button"
-            className="bg-blue-500 text-white px-3 py-2 rounded"
-            onClick={sendOtp}
+            type="submit"
+            className="bg-blue-600 text-white px-4 py-2 rounded"
           >
-            Send OTP
+            Send OTP & Continue
           </button>
         )}
 
-        {otpSent && !otpVerified && (
+        {/* OTP Verification Section */}
+        {otpStage === "sent" && (
           <>
             <input
               type="text"
@@ -171,131 +167,143 @@ const AdminRegistration = () => {
               placeholder="Enter OTP"
               className="w-full border px-3 py-2"
             />
-            <button
-              type="button"
-              className="bg-green-500 text-white px-3 py-2 rounded"
-              onClick={verifyOtp}
-              disabled={verifyingOtp}
-            >
-              {verifyingOtp ? "Verifying..." : "Verify OTP"}
-            </button>
-          </>
-        )}
-
-        {/* Job Title Selection */}
-        <label className="block font-medium">Job Title(s)</label>
-        {isAdminRoute ? (
-          <>
-            <select
-              className="w-full border px-3 py-2 bg-gray-100 cursor-not-allowed"
-              disabled
-            >
-              <option value="Admin">Admin</option>
-            </select>
-
-            <select
-              className="w-full border px-3 py-2"
-              value={form.jobTitles[1] || ""}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  jobTitles: ["Admin", e.target.value]
-                }))
-              }
-            >
-              <option value="">Select Secondary Job Title</option>
-              {JOB_TITLES.filter(title => title !== "Admin").map((title) => (
-                <option key={title} value={title}>
-                  {title}
-                </option>
-              ))}
-            </select>
-
-            <input
-              name="passcode"
-              type="password"
-              placeholder="Admin Passcode"
-              className="w-full border px-3 py-2"
-              value={form.passcode}
-              onChange={handleChange}
-            />
-          </>
-        ) : (
-          <>
-            <select
-              className="w-full border px-3 py-2"
-              value={form.jobTitles[0] || ""}
-              onChange={(e) => {
-                const selected = e.target.value;
-                setForm({ ...form, jobTitles: [selected], passcode: "" });
-
-                if (selected === "Admin") {
-                  setIsAdminSelected(true);
-                  setAdminCodeValid(false);
-                } else {
-                  setIsAdminSelected(false);
-                  setAdminCodeValid(false);
-                }
-              }}
-            >
-              <option value="">Select Job Title</option>
-              {JOB_TITLES.map((title) => (
-                <option key={title} value={title}>
-                  {title}
-                </option>
-              ))}
-            </select>
-
-            {isAdminSelected && !adminCodeValid && (
-              <input
-                type="password"
-                placeholder="Enter Admin Code"
-                className="w-full border px-3 py-2"
-                value={form.passcode}
-                onChange={(e) =>
-                  setForm({ ...form, passcode: e.target.value })
-                }
-                onBlur={() => {
-                  if (form.passcode === "King@2025") {
-                    setAdminCodeValid(true);
-                  } else {
-                    alert("❌ Invalid Admin code. Use other Job Titles.");
-                    setForm({ ...form, jobTitles: [""], passcode: "" });
-                    setIsAdminSelected(false);
-                    setAdminCodeValid(false);
-                  }
-                }}
-              />
-            )}
-
-            {adminCodeValid && (
-              <select
-                className="w-full border px-3 py-2"
-                value={form.jobTitles[1] || ""}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    jobTitles: ["Admin", e.target.value]
-                  }))
-                }
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className="bg-green-600 text-white px-4 py-2 rounded"
+                onClick={verifyOtp}
               >
-                <option value="">Select Secondary Job Title</option>
-                {JOB_TITLES.filter(title => title !== "Admin").map((title) => (
-                  <option key={title} value={title}>
-                    {title}
-                  </option>
-                ))}
-              </select>
-            )}
+                Verify OTP
+              </button>
+              <button
+                type="button"
+                className="bg-yellow-500 text-white px-4 py-2 rounded"
+                onClick={sendOtp}
+              >
+                Resend OTP
+              </button>
+              <button
+                type="button"
+                className="bg-gray-500 text-white px-4 py-2 rounded"
+                onClick={resetOtpFlow}
+              >
+                Change Mobile
+              </button>
+            </div>
           </>
         )}
 
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-        >
-          {isAdminRoute ? "Register Admin" : "Submit Request"}
-        </button>
+        {/* Admin Job Title selection */}
+        {otpStage !== "none" && (
+          <>
+            <label className="block font-medium">Job Title(s)</label>
+            {isAdminRoute ? (
+              <>
+                <select
+                  className="w-full border px-3 py-2 bg-gray-100 cursor-not-allowed"
+                  disabled
+                >
+                  <option value="Admin">Admin</option>
+                </select>
+                <select
+                  className="w-full border px-3 py-2"
+                  value={form.jobTitles[1] || ""}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      jobTitles: ["Admin", e.target.value]
+                    }))
+                  }
+                >
+                  <option value="">Select Secondary Job Title</option>
+                  {JOB_TITLES.filter(t => t !== "Admin").map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+                <input
+                  name="passcode"
+                  type="password"
+                  placeholder="Admin Passcode"
+                  className="w-full border px-3 py-2"
+                  value={form.passcode}
+                  onChange={handleChange}
+                />
+              </>
+            ) : (
+              <>
+                <select
+                  className="w-full border px-3 py-2"
+                  value={form.jobTitles[0] || ""}
+                  onChange={(e) => {
+                    const selected = e.target.value;
+                    setForm({ ...form, jobTitles: [selected], passcode: "" });
+
+                    if (selected === "Admin") {
+                      setIsAdminSelected(true);
+                      setAdminCodeValid(false);
+                    } else {
+                      setIsAdminSelected(false);
+                      setAdminCodeValid(false);
+                    }
+                  }}
+                >
+                  <option value="">Select Job Title</option>
+                  {JOB_TITLES.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+
+                {isAdminSelected && !adminCodeValid && (
+                  <input
+                    type="password"
+                    placeholder="Enter Admin Code"
+                    className="w-full border px-3 py-2"
+                    value={form.passcode}
+                    onChange={(e) => setForm({ ...form, passcode: e.target.value })}
+                    onBlur={() => {
+                      if (form.passcode === "King@2025") {
+                        setAdminCodeValid(true);
+                      } else {
+                        alert("❌ Invalid Admin code. Use other Job Titles.");
+                        setForm({ ...form, jobTitles: [""], passcode: "" });
+                        setIsAdminSelected(false);
+                        setAdminCodeValid(false);
+                      }
+                    }}
+                  />
+                )}
+
+                {adminCodeValid && (
+                  <select
+                    className="w-full border px-3 py-2"
+                    value={form.jobTitles[1] || ""}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        jobTitles: ["Admin", e.target.value]
+                      }))
+                    }
+                  >
+                    <option value="">Select Secondary Job Title</option>
+                    {JOB_TITLES.filter(t => t !== "Admin").map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                )}
+              </>
+            )}
+
+            {otpStage === "verified" && (
+              <button
+                type="button"
+                className="bg-blue-700 text-white px-4 py-2 rounded mt-4"
+                onClick={submitForm}
+              >
+                {isAdminRoute ? "Register Admin" : "Submit Request"}
+              </button>
+            )}
+          </>
+        )}
       </form>
 
       <div id="recaptcha-container"></div>
