@@ -8,9 +8,9 @@ import {
 
 const firebaseConfig = {
   apiKey: "AIzaSyA4JTCdISIqnTc8M3PX8xAuTkyz0HujwXQ",
-  authDomain: " trainingapp-3d465.firebaseapp.com",
-  projectId: " trainingapp-3d465",
-  storageBucket: " trainingapp-3d465.firebasestorage.app",
+  authDomain: "trainingapp-3d465.firebaseapp.com",
+  projectId: "trainingapp-3d465",
+  storageBucket: "trainingapp-3d465.firebasestorage.app",
   messagingSenderId: "472813194782",
   appId: "1:472813194782:web:57a41ccb63630ba8aaa80f",
 };
