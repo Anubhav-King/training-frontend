@@ -31,6 +31,13 @@ const AdminRegistration = () => {
 
   const triggerRecaptcha = () => {
     if (!window.recaptchaVerifier) {
+      const container = document.getElementById("recaptcha-container");
+      if (!container) {
+        const newContainer = document.createElement("div");
+        newContainer.id = "recaptcha-container";
+        document.body.appendChild(newContainer);
+      }
+
       window.recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
         size: "invisible",
         callback: () => {},
@@ -296,7 +303,20 @@ const AdminRegistration = () => {
             {otpStage === "verified" && (
               <button
                 type="button"
-                className="bg-blue-700 text-white px-4 py-2 rounded mt-4"
+                className={`px-4 py-2 rounded mt-4 text-white ${(
+                  (isAdminRoute && !form.jobTitles[1]) ||
+                  (!isAdminRoute && (
+                    form.jobTitles[0] === "" ||
+                    (form.jobTitles[0] === "Admin" && (!adminCodeValid || !form.jobTitles[1]))
+                  ))
+                ) ? "bg-gray-400 cursor-not-allowed" : "bg-blue-700 hover:bg-blue-800"}`}
+                disabled={
+                  (isAdminRoute && !form.jobTitles[1]) ||
+                  (!isAdminRoute && (
+                    form.jobTitles[0] === "" ||
+                    (form.jobTitles[0] === "Admin" && (!adminCodeValid || !form.jobTitles[1]))
+                  ))
+                }
                 onClick={submitForm}
               >
                 {isAdminRoute ? "Register Admin" : "Submit Request"}
@@ -304,9 +324,8 @@ const AdminRegistration = () => {
             )}
           </>
         )}
+        <div id="recaptcha-container"></div>
       </form>
-
-      <div id="recaptcha-container"></div>
 
       <p className="text-sm text-center mt-4">
         Already have an account?{" "}
