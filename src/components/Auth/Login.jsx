@@ -23,13 +23,8 @@ const Login = () => {
       const { token, user, mustChangePassword } = res.data;
 
       if (!user.active || !user.approvedBy) {
-        // If not yet approved
-        const res2 = await axios.get(`${BASE_URL}/api/users/list`);
-        const admins = res2.data.filter((u) => u.isAdmin);
-        const names = admins.map((a) => a.name).join(", ");
-        alert(
-          `❌ User is not yet activated.\nKindly contact Admin(s): ${names}`
-        );
+        const names = adminNames.length ? adminNames.join(", ") : "Admin(s)";
+        alert(`❌ User is not yet activated.\nKindly contact Admin(s): ${names}`);
         return;
       }
 
@@ -39,9 +34,16 @@ const Login = () => {
       navigate("/");
     } catch (err) {
       console.error(err);
-      const message =
-        err.response?.data?.error || "Login failed. Please try again.";
-      alert(`❌ ${message}`);
+      const backendMessage = err.response?.data?.error || "";
+      if (backendMessage === "User is not yet activated") {
+        const adminList = adminNames.length ? adminNames.join(", ") : "an Admin";
+        alert(`❌ Your account is not yet activated.\nPlease contact ${adminList}.`);
+      } else if (backendMessage === "User has been deactivated") {
+        const adminList = adminNames.length ? adminNames.join(", ") : "an Admin";
+        alert(`❌ Your account has been deactivated.\nPlease contact ${adminList}.`);
+      } else {
+        alert(backendMessage || "Login failed. Please try again.");
+      }
     }
   };
 
