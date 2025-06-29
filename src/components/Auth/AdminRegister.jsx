@@ -99,6 +99,11 @@ const AdminRegistration = () => {
     const isAdmin = isAdminRoute || (form.jobTitles[0] === "Admin" && adminCodeValid);
     const jobTitles = isAdmin ? ["Admin", form.jobTitles[1]] : [form.jobTitles[0]];
 
+    if (jobTitles.includes("") || jobTitles.length === 0) {
+      alert("❌ Please select a valid job title.");
+      return;
+    }
+
     const payload = {
       name: form.name,
       mobile: form.mobile,
