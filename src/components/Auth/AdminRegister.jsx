@@ -115,7 +115,8 @@ const AdminRegistration = () => {
       navigate("/login");
     } catch (err) {
       console.error(err);
-      alert("Registration failed");
+      const errorMsg = err.response?.data?.message || "Registration failed.";
+      alert(`❌ ${errorMsg}`);
     }
   };
 
@@ -202,7 +203,7 @@ const AdminRegistration = () => {
         )}
 
         {/* Admin Job Title selection */}
-        {otpStage !== "none" && (
+        {otpStage === "verified" && (
           <>
             <label className="block font-medium">Job Title(s)</label>
             {isAdminRoute ? (
