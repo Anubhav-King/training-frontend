@@ -25,7 +25,12 @@ const Login = () => {
       // ✅ Successful login
       localStorage.setItem("token", token);
       setUser(user);
-      navigate("/");
+
+      if (mustChangePassword) {
+        navigate("/change-password");
+      } else {
+        navigate("/");
+      }
     } catch (err) {
       console.error(err);
       const backendMessage = err.response?.data?.error || "";
@@ -46,8 +51,8 @@ const Login = () => {
     const fetchAdmins = async () => {
       try {
         const res = await axios.get(`${BASE_URL}/api/users/list`);
-        const admins = res.data.filter((user) =>
-          user.jobTitles?.includes("Admin")
+        const admins = res.data.filter(
+          (user) => user.jobTitles?.includes("Admin") && user.active
         );
         setAdminNames(admins.map((admin) => admin.name));
       } catch (err) {
