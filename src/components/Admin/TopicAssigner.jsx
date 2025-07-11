@@ -49,6 +49,7 @@ const TopicAssigner = () => {
       console.error("Failed to fetch topics:", err);
     }
   };
+  console.log("✅ Assigned topics fetched:", assigned.data);
 
   const fetchUsers = async () => {
     try {
@@ -393,6 +394,7 @@ const TopicAssigner = () => {
       {activeTab === "assigned" && (
         <>
           <h2 className="text-xl font-bold mb-4">Assigned Topics</h2>
+          {console.log("🟢 assignedTopics:", assignedTopics)}
           {assignedTopics.map((topic) => {
             const isEditing = editingTopicId === topic._id;
             const logs = logsByTopic[topic._id] || {};
