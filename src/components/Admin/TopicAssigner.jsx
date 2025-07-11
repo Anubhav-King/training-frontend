@@ -39,8 +39,8 @@ const TopicAssigner = () => {
 
   const fetchTopics = async () => {
     try {
-      console.log("🔐 Token:", token);
-console.log("🛠️ Auth Config:", config);
+      //console.log("🔐 Token:", token);
+//console.log("🛠️ Auth Config:", config);
 const [unassigned, assigned] = await Promise.all([
         axios.get(`${BASE_URL}/api/topics/unassigned`, config),
         axios.get(`${BASE_URL}/api/topics/assigned`, config),
@@ -51,7 +51,7 @@ const [unassigned, assigned] = await Promise.all([
       console.error("Failed to fetch topics:", err);
     }
   };
-  console.log("✅ Assigned topics fetched:", assignedTopics.data);
+  //console.log("✅ Assigned topics fetched:", assignedTopics.data);
 
   const fetchUsers = async () => {
     try {
@@ -396,7 +396,7 @@ const [unassigned, assigned] = await Promise.all([
       {activeTab === "assigned" && (
         <>
           <h2 className="text-xl font-bold mb-4">Assigned Topics</h2>
-          {console.log("🟢 assignedTopics:", assignedTopics)}
+          //{console.log("🟢 assignedTopics:", assignedTopics)}
           {assignedTopics.map((topic) => {
             const isEditing = editingTopicId === topic._id;
             const logs = logsByTopic[topic._id] || {};
