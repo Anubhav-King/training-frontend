@@ -49,7 +49,7 @@ const TopicAssigner = () => {
       console.error("Failed to fetch topics:", err);
     }
   };
-  console.log("✅ Assigned topics fetched:", assigned.data);
+  console.log("✅ Assigned topics fetched:", setAssignedTopics.data);
 
   const fetchUsers = async () => {
     try {
