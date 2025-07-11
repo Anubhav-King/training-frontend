@@ -40,8 +40,6 @@ const TopicAssigner = () => {
   const fetchTopics = async () => {
     try {
       const [unassigned, assigned] = await Promise.all([
-        console.log("🔐 Token:", token);
-console.log("🛠️ Auth Config:", config);
         axios.get(`${BASE_URL}/api/topics/unassigned`, config),
         axios.get(`${BASE_URL}/api/topics/assigned`, config),
       ]);
